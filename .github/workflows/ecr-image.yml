@@ -1,0 +1,39 @@
+name: ECR Test CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION : us-east-1
+# permission can be added at job level or workflow level
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+jobs:
+  dockerbuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v4
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::125137910162:role/GitHubAction-ECR_RoleWithAction
+          role-session-name: ecrrolesessiontemp
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Login to AWS ECR
+        run: |
+          aws ecr get-login-password --region ${{ env.AWS_REGION }}| docker login --username AWS --password-stdin 125137910162.dkr.ecr.us-east-1.amazonaws.com
+
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t aws-ecr-kubenginx:1.0.0 .
+          docker tag aws-ecr-kubenginx:1.0.0 125137910162.dkr.ecr.us-east-1.amazonaws.com/aws-ecr-kubenginx:1.0.0
+          docker push 125137910162.dkr.ecr.us-east-1.amazonaws.com/aws-ecr-kubenginx:1.0.0
+
