@@ -17,15 +17,13 @@ jobs:
     steps:
       - name: Git clone the repository
         uses: actions/checkout@v4
+
       - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v3
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::125137910162:role/GitHubAction-ECR_RoleWithAction
           role-session-name: ecrrolesessiontemp
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Checkout Repository
-        uses: actions/checkout@v2
 
       - name: Login to AWS ECR
         run: |
