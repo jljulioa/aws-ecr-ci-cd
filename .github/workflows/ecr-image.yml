@@ -69,8 +69,6 @@ jobs:
 
       - name: Debug IAM Role Permissions
         run: |
-          aws iam get-role --role-name GitHubAction-ECR_RoleWithAction
-          aws iam list-attached-role-policies --role-name GitHubAction-ECR_RoleWithAction
           aws ecr describe-repositories
           aws eks describe-cluster --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
 
