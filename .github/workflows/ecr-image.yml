@@ -70,7 +70,6 @@ jobs:
       - name: Deploy to EKS
         run: |
           kubectl get pods -n kube-system
-          kubectl apply -f kube-manifests/01-DEVOPS-Nginx-Deployment.yml --validate=false
-          kubectl apply -f kube-manifests/02-DEVOPS-Nginx-NodePortService.yml --validate=false
-          kubectl apply -f kube-manifests/03-DEVOPS-Nginx-ALB-IngressService.yml --validate=false
+          kubectl apply -f kube-manifests/ --validate=false
+          
 
