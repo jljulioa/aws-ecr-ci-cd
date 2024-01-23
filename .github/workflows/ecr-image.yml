@@ -46,12 +46,12 @@ jobs:
       
       - name: Debug kubectl configuration
         run: |
-          cat $HOME/.kube/config
+          cat $GITHUB_WORKSPACE/.kube/config
           kubectl config current-context
-      
+
       - name: Configure kubectl
         run: |
-          export KUBECONFIG=$HOME/.kube/config
+          export KUBECONFIG=$GITHUB_WORKSPACE/.kube/config
 
       - name: Check kubectl
         run: |
