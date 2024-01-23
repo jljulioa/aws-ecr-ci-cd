@@ -43,16 +43,16 @@ jobs:
         run: |
           docker build -t ${{ env.REPOSITORY_URI }}:${{ env.IMAGE_TAG }} .
           docker push ${{ env.REPOSITORY_URI }}:${{ env.IMAGE_TAG }}
-
-      - name: Debug kubectl configuration
-        run: |
-          cat $HOME/.kube/config
-          kubectl config current-context
-
+      
       - name: Configure kubectl
         run: |
           export KUBECONFIG=$HOME/.kube/config
           aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} 
+
+      - name: Check kubectl
+        run: |
+          kubectl version --client
+          kubectl config view 
 
       - name: Deploy to EKS
         run: |
