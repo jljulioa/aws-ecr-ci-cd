@@ -44,22 +44,23 @@ jobs:
           docker build -t ${{ env.REPOSITORY_URI }}:${{ env.IMAGE_TAG }} .
           docker push ${{ env.REPOSITORY_URI }}:${{ env.IMAGE_TAG }}
       
-      - name: Debug kubectl configuration
+      - name: cheking the aws cli config
         run: |
-          cat $GITHUB_WORKSPACE/.kube/config
-          kubectl config current-context
-
-      - name: Configure kubectl
-        run: |
-          export KUBECONFIG=$HOME/.kube/config
+          aws configure list
 
       - name: Check kubectl
         run: |
           kubectl version --client
           kubectl config view
 
+      - name: Update kube-confige files
+        run: |
+           aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+
       - name: Deploy to EKS
         run: |
-          aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
           kubectl get pods -n kube-system
-          kubectl apply -f kube-manifests/ --validate=false
+          kubectl apply -f kube-manifests/01-DEVOPS-Nginx-Deployment.yml --validate=false
+          kubectl apply -f kube-manifests/02-DEVOPS-Nginx-NodePortService.yml --validate=false
+          kubectl apply -f kube-manifests/03-DEVOPS-Nginx-ALB-IngressService.yml --validate=false
+
