@@ -73,7 +73,7 @@ jobs:
 
       - name: Deploy to EKS
         run: |
-          kubectl get pods
+          kubectl get pods -n kube-system
           kubectl apply -f kube-manifests/
           
 
