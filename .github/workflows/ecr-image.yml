@@ -7,30 +7,57 @@ on:
 
 env:
   AWS_REGION: us-east-1
+  EKS_CLUSTER_NAME: eksdemo1
+  REPOSITORY_URI: 125137910162.dkr.ecr.us-east-1.amazonaws.com/aws-ecr-kubenginx
+  IMAGE_TAG: ${{ github.run_number }} # GitHub run number as a unique image tag
+
 # permission can be added at job level or workflow level
 permissions:
   id-token: write # This is required for requesting the JWT
   contents: read # This is required for actions/checkout
-jobs:
-  dockerbuild:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Git clone the repository
-        uses: actions/checkout@v4
 
-      - name: configure aws credentials
+jobs:
+  configure-aws:
+    runs-on: ubuntu-latest
+    outputs:
+      id: aws-creds
+    steps:
+      - name: Configure AWS credentials
+        id: configure-aws
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::125137910162:role/GitHubAction-ECR_RoleWithAction
           role-session-name: ecrrolesessiontemp
           aws-region: ${{ env.AWS_REGION }}
 
+  docker-build-push-ecr:
+    needs: configure-aws
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v4
+
+      - name: Set image tag
+        run: |
+          echo "Setting image tag to ${{ env.IMAGE_TAG }}"
+          sed -i "s/\${CONTAINER_IMAGE}/\${REPOSITORY_URI}:${IMAGE_TAG}/g" kube-manifests/01-DEVOPS-Nginx-Deployment.yml
+
       - name: Login to AWS ECR
         run: |
-          aws ecr get-login-password --region ${{ env.AWS_REGION }}| docker login --username AWS --password-stdin 125137910162.dkr.ecr.us-east-1.amazonaws.com
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.REPOSITORY_URI }}
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t aws-ecr-kubenginx:1.0.1 .
-          docker tag aws-ecr-kubenginx:1.0.1 125137910162.dkr.ecr.us-east-1.amazonaws.com/aws-ecr-kubenginx:1.0.1
-          docker push 125137910162.dkr.ecr.us-east-1.amazonaws.com/aws-ecr-kubenginx:1.0.1
+          docker build -t ${{ env.REPOSITORY_URI }}:${{ env.IMAGE_TAG }} .
+          docker push ${{ env.REPOSITORY_URI }}:${{ env.IMAGE_TAG }}
+
+  deploy-to-eks:
+    needs:
+      - docker-build-push-ecr
+      - configure-aws
+    runs-on: ubuntu-latest
+    steps:     
+      - name: Deploy to EKS
+        run: |
+          aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }}
+          kubectl apply -f kube-manifests/
