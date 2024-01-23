@@ -33,7 +33,7 @@ jobs:
       - name: Set image tag
         run: |
           echo "Setting image tag to ${{ env.IMAGE_TAG }}"
-          sed -i "s/\${CONTAINER_IMAGE}/\${REPOSITORY_URI}:${IMAGE_TAG}/g" kube-manifests/01-DEVOPS-Nginx-Deployment.yml
+          sed -i 's@CONTAINER_IMAGE@'"$REPOSITORY_URI:$IMAGE_TAG"'@' kube-manifests/01-DEVOPS-Nginx-Deployment.yml
 
       - name: Login to AWS ECR
         run: |
@@ -43,8 +43,8 @@ jobs:
         run: |
           docker build -t ${{ env.REPOSITORY_URI }}:${{ env.IMAGE_TAG }} .
           docker push ${{ env.REPOSITORY_URI }}:${{ env.IMAGE_TAG }}
-  
+
       - name: Deploy to EKS
         run: |
           aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} 
-          kubectl apply -f kube-manifests/ 
+          kubectl apply -f kube-manifests/ --validate=false
