@@ -44,10 +44,14 @@ jobs:
           docker build -t ${{ env.REPOSITORY_URI }}:${{ env.IMAGE_TAG }} .
           docker push ${{ env.REPOSITORY_URI }}:${{ env.IMAGE_TAG }}
       
+      - name: Debug kubectl configuration
+        run: |
+          cat $HOME/.kube/config
+          kubectl config current-context
+      
       - name: Configure kubectl
         run: |
           export KUBECONFIG=$HOME/.kube/config
-          aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} 
 
       - name: Check kubectl
         run: |
@@ -56,4 +60,5 @@ jobs:
 
       - name: Deploy to EKS
         run: |
+          aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
           kubectl apply -f kube-manifests/ --validate=false
