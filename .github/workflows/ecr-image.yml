@@ -37,7 +37,7 @@ jobs:
 
       - name: Fail steps
         run: |
-          echo Hello, world! && exit 1
+          echo Hello Jaime, world! && exit 1
 
       - name: Set image tag
         run: |
