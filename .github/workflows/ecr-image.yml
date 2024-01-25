@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Capture GitHub Actions error message
-        if: failure()
+        if: always()
         id: capture-error
         run: echo "::set-output name=error_message::${{ toJson(needs.eks-ecr-workflow.outputs) }}"
 
