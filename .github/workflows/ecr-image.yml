@@ -20,6 +20,11 @@ jobs:
   eks-ecr-workflow:
     runs-on: ubuntu-latest
     steps:
+      - name: Capture GitHub Actions error message
+        if: failure()
+        id: capture-error
+        run: echo "::set-output name=error_message::${{ toJson(needs.eks-ecr-workflow.outputs) }}"
+
       - name: Git clone the repository
         uses: actions/checkout@v4
 
@@ -29,6 +34,10 @@ jobs:
           role-to-assume: arn:aws:iam::125137910162:role/GitHubAction-ECR_RoleWithAction
           role-session-name: ecrrolesessiontemp
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Fail steps
+        run: |
+          echo Hello, world! && exit 1
 
       - name: Set image tag
         run: |
@@ -76,4 +85,30 @@ jobs:
           kubectl get svc
           kubectl apply -f kube-manifests/
           
+  send-whatsapp-notification:
+      runs-on: ubuntu-latest
+      needs: eks-ecr-workflow
+      if: failure()
+      env:
+        TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+        TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+        TO_WHATSAPP_NUMBER: ${{ secrets.WHATSAPP_NUMBER }} 
+      steps:
+        - name: Send WhatsApp Notification on Failure
+          run: |
+            # Custom fail log message
+            ERROR_MESSAGE="GitHub Actions workflow failed. Sending WhatsApp notification."
+            echo "::error::${ERROR_MESSAGE}"
 
+            # Extract GitHub Actions error message from the first job
+            GH_ACTIONS_ERROR=$(echo "${{ needs.eks-ecr-workflow.outputs.value }}" | jq -r '.error_message')
+
+            # Include GitHub Actions error message in the Body parameter
+            BODY_MESSAGE="GitHub Actions workflow failed. Error: ${GH_ACTIONS_ERROR}"
+
+            # Use the messaging service API to send the WhatsApp message
+            curl 'https://api.twilio.com/2010-04-01/Accounts/AC63abeba3e5047c2fd853de5931ec0bb8/Messages.json' -X POST \
+            --data-urlencode "Body=${BODY_MESSAGE}" \
+            --data-urlencode "From=whatsapp:+14155238886" \
+            --data-urlencode "To=whatsapp:${TO_WHATSAPP_NUMBER}" \
+            -u "${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}"
