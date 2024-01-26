@@ -19,11 +19,7 @@ permissions:
 jobs:
   eks-ecr-workflow:
     runs-on: ubuntu-latest
-    steps:
-      - name: Capture GitHub Actions error message
-        if: always()
-        id: capture-error
-        run: echo "error_message=${{ toJson(needs.eks-ecr-workflow.outputs.error_message) }}" >> $GITHUB_ENV
+    steps:     
 
       - name: Git clone the repository
         uses: actions/checkout@v4
@@ -84,6 +80,11 @@ jobs:
         run: |
           kubectl get svc
           kubectl apply -f kube-manifests/
+
+      - name: Capture GitHub Actions error message
+        if: always()
+        id: capture-error
+        run: echo "error_message=${{ toJson(needs.eks-ecr-workflow.outputs.error_message) }}" >> $GITHUB_ENV
           
   send-whatsapp-notification:
       runs-on: ubuntu-latest
