@@ -31,10 +31,6 @@ jobs:
           role-session-name: ecrrolesessiontemp
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Fail steps
-        run: |
-          echo Hello Jaime, world! && exit 1
-
       - name: Set image tag
         run: |
           echo "Setting image tag to ${{ env.IMAGE_TAG }}"
