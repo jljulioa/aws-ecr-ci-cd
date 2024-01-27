@@ -19,8 +19,6 @@ permissions:
 jobs:
   eks-ecr-workflow:
     runs-on: ubuntu-latest
-    outputs:
-      output1: ${{ steps.capture-error.outputs.error_message }}
     steps:     
 
       - name: Git clone the repository
@@ -82,15 +80,7 @@ jobs:
         run: |
           kubectl get svc
           kubectl apply -f kube-manifests/
-  
-      - name: Capture GitHub Actions error message
-        if: always()
-        id: capture-error
-        run: |
-          # Capture the last command and its exit code
-          trap 'error_message="Last command: $BASH_COMMAND, Exit code: $?"' ERR
-          echo "error_message=${error_message}" >> "$GITHUB_OUTPUT"
-           
+             
   send-whatsapp-notification:
       runs-on: ubuntu-latest
       needs: eks-ecr-workflow
@@ -99,17 +89,13 @@ jobs:
         TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
         TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
         TO_WHATSAPP_NUMBER: ${{ secrets.WHATSAPP_NUMBER }} 
-        OP1: ${{ needs.eks-ecr-workflow.outputs.output1 }}
       steps:
                     
         - name: Send WhatsApp Notification on Failure
           run: |
-            
-            # Extract GitHub Actions error message from the first job
-            GH_ACTIONS_ERROR=$(echo "${OP1}")
-
+           
             # Include GitHub Actions error message in the Body parameter
-            BODY_MESSAGE="GitHub Actions workflow failed. Error: ${GH_ACTIONS_ERROR}"
+            BODY_MESSAGE="GitHub Actions workflow failed."
 
             # Use the messaging service API to send the WhatsApp message
             curl 'https://api.twilio.com/2010-04-01/Accounts/AC63abeba3e5047c2fd853de5931ec0bb8/Messages.json' -X POST \
