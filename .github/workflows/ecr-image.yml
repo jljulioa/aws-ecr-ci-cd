@@ -19,6 +19,8 @@ permissions:
 jobs:
   eks-ecr-workflow:
     runs-on: ubuntu-latest
+    outputs:
+      output1: ${{ steps.capture-error.outputs.error_message }}
     steps:     
 
       - name: Git clone the repository
@@ -80,12 +82,15 @@ jobs:
         run: |
           kubectl get svc
           kubectl apply -f kube-manifests/
-
+  
       - name: Capture GitHub Actions error message
         if: always()
         id: capture-error
-        run: echo "error_message=${{ toJson(needs.eks-ecr-workflow.outputs.error_message) }}" >> $GITHUB_ENV
-          
+        run: |
+          # Capture the last command and its exit code
+          error_message="Last command: ${BASH_COMMAND}, Exit code: $?"
+          echo "error_message=${error_message}" >> "$GITHUB_OUTPUT"
+           
   send-whatsapp-notification:
       runs-on: ubuntu-latest
       needs: eks-ecr-workflow
@@ -94,15 +99,14 @@ jobs:
         TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
         TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
         TO_WHATSAPP_NUMBER: ${{ secrets.WHATSAPP_NUMBER }} 
+        OP1: ${{ needs.eks-ecr-workflow.outputs.output1 }}
       steps:
+                    
         - name: Send WhatsApp Notification on Failure
           run: |
-            # Custom fail log message
-            ERROR_MESSAGE="GitHub Actions workflow failed. Sending WhatsApp notification."
-            echo "::error::${ERROR_MESSAGE}"
-
+            
             # Extract GitHub Actions error message from the first job
-            GH_ACTIONS_ERROR=$(echo "${{ needs.eks-ecr-workflow.outputs.value }}" | jq -r '.error_message')
+            GH_ACTIONS_ERROR=$(echo "${OP1}")
 
             # Include GitHub Actions error message in the Body parameter
             BODY_MESSAGE="GitHub Actions workflow failed. Error: ${GH_ACTIONS_ERROR}"
