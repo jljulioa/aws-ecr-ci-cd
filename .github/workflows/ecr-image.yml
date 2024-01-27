@@ -95,7 +95,7 @@ jobs:
           run: |
            
             # Include GitHub Actions error message in the Body parameter
-            BODY_MESSAGE="GitHub Actions workflow failed."
+            BODY_MESSAGE="GitHub Actions workflow failed, check it out"
 
             # Use the messaging service API to send the WhatsApp message
             curl 'https://api.twilio.com/2010-04-01/Accounts/AC63abeba3e5047c2fd853de5931ec0bb8/Messages.json' -X POST \
